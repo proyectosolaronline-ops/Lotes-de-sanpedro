@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Panel Admin · Lotes</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2A4A; --ink-soft:#334268; --paper:#F5F3EE; --paper-line:#E4E0D6;
+    --ochre:#C89B3C; --ok:#3E7A4C; --sold:#8A2B2B; --held:#B8842B; --legal:#5B4B8A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Inter', sans-serif; background:var(--paper); color:var(--ink);
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:12px 16px; border-bottom:2px solid var(--ink); background:var(--paper);
+    flex-wrap:wrap; gap:6px;
+  }
+  header h1{ font-family:'Fraunces', serif; font-size:1.05rem; font-weight:700; margin:0; }
+  header .stamp{
+    font-family:'JetBrains Mono', monospace; font-size:.62rem; color:var(--ink-soft);
+    border:1px solid var(--ink-soft); padding:3px 8px; border-radius:2px;
+    text-transform:uppercase; letter-spacing:1px; white-space:nowrap;
+    cursor:pointer;
+  }
+  header .stamp:hover{ background:var(--ink); color:var(--paper); }
+  .layout{ display:flex; flex-direction:column; min-height:calc(100vh - 60px); }
+  #map{ height:45vh; min-height:280px; width:100%; border-bottom:2px solid var(--ink); }
+  .panel{ padding:14px; overflow-y:auto; flex:1; }
+  .card{
+    background:#fff; border:1px solid var(--paper-line); border-radius:4px;
+    padding:14px 16px; margin-bottom:14px; position:relative;
+  }
+  .card::before{
+    content:attr(data-tag); position:absolute; top:-10px; left:12px;
+    background:var(--ink); color:var(--paper); font-family:'JetBrains Mono', monospace;
+    font-size:.6rem; letter-spacing:1px; padding:2px 7px; border-radius:2px;
+  }
+  .coords{ display:flex; gap:8px; font-family:'JetBrains Mono', monospace; }
+  .coords .box{
+    flex:1; background:var(--ink); color:#B7F0C4; padding:8px 10px;
+    border-radius:3px; font-size:.8rem; display:flex; flex-direction:column; gap:2px;
+  }
+  .coords .box span{ font-size:.55rem; color:#8FA8C7; letter-spacing:1px; text-transform:uppercase; }
+  .hint{ font-size:.7rem; color:var(--ink-soft); margin:6px 0 0; font-style:italic; }
+  label{
+    display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--ink-soft); margin:10px 0 4px; font-weight:600;
+  }
+  input[type=text], input[type=number], select{
+    width:100%; padding:10px 12px; border:1px solid var(--paper-line); border-radius:3px;
+    font-family:'Inter', sans-serif; font-size:1rem; background:var(--paper); color:var(--ink);
+    -webkit-appearance:none;
+  }
+  input:focus, select:focus{ outline:2px solid var(--ochre); outline-offset:1px; background:#fff; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  button{
+    margin-top:14px; width:100%; padding:14px; background:var(--ink); color:var(--paper);
+    border:none; border-radius:3px; font-family:'JetBrains Mono', monospace; font-size:.82rem;
+    letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+  }
+  button:hover{ background:var(--ochre); color:var(--ink); }
+  button:disabled{ opacity:.5; cursor:wait; }
+  #status-msg{ margin-top:8px; font-size:.74rem; font-family:'JetBrains Mono', monospace; min-height:1.1em; }
+  .foto-preview{ max-width:100%; max-height:160px; border-radius:4px; margin-top:8px; display:none; }
+  @media (min-width:768px){
+    header{ padding:14px 20px; }
+    header h1{ font-size:1.25rem; }
+    .layout{ display:grid; grid-template-columns:1.4fr 1fr; min-height:calc(100vh - 60px); }
+    #map{ height:100%; min-height:480px; border-right:2px solid var(--ink); border-bottom:none; }
+    .panel{ padding:22px 24px 40px; max-height:calc(100vh - 60px); }
+    .card{ padding:18px 20px; margin-bottom:20px; }
+    .coords .box{ padding:10px 12px; font-size:.9rem; }
+    input[type=text], input[type=number], select{ font-size:.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PROTECCIÓN DE SESIÓN                   -->
+<!-- ═══════════════════════════════════════ -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/session.js"></script>
+<script src="js/inactivity.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    if (!SessionManager.isActive()) {
+        window.location.href = 'index.html';
+    }
+
+    InactivityTimer.start(
+        function() {
+            var overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;';
+            overlay.innerHTML = '<div style="background:#fff;padding:24px;border-radius:4px;text-align:center;max-width:320px;font-family:Inter,sans-serif;">' +
+                '<p style="font-size:18px;margin-bottom:8px;">⏳ Sesión por expirar</p>' +
+                '<p style="font-size:14px;color:#666;margin-bottom:16px;">Tu sesión expirará en 2 minutos por inactividad.</p>' +
+                '<button onclick="this.closest(\'div\').parentElement.remove();InactivityTimer.extend(function(){}, function(){AuthService.logout();});" style="padding:10px 20px;background:#1B2A4A;color:#fff;border:none;border-radius:3px;cursor:pointer;font-weight:600;">Continuar sesión</button>' +
+                '</div>';
+            document.body.appendChild(overlay);
+        },
+        function() { AuthService.logout(); }
+    );
+</script>
+
+<header>
+  <h1>🏗️ Panel Admin · Lotes</h1>
+  <span class="stamp" id="sessionStamp" title="Cerrar sesión">Admin</span>
+</header>
+
+<div class="layout">
+  <div id="map"></div>
+  <div class="panel">
+    <div class="card" data-tag="Ubicación">
+      <div class="coords">
+        <div class="box"><span>Latitud</span><b id="lat-display">—</b></div>
+        <div class="box"><span>Longitud</span><b id="lng-display">—</b></div>
+      </div>
+      <p class="hint">Toca el mapa o escribe coordenadas.</p>
+      <div class="row2">
+        <div><label for="lat-input">Latitud</label><input type="text" id="lat-input" placeholder="32.62476" inputmode="decimal"></div>
+        <div><label for="lng-input">Longitud</label><input type="text" id="lng-input" placeholder="-115.45389" inputmode="decimal"></div>
+      </div>
+    </div>
+    <div class="card" data-tag="Ficha del Lote">
+      <label for="codigolote">Código</label><input type="text" id="codigolote" placeholder="LOTE-001">
+      <div class="row2">
+        <div><label for="tipopago">Pago</label><select id="tipopago"><option>Contado</option><option>Crédito</option><option>Financiamiento</option></select></div>
+        <div><label for="estado">Estado</label><select id="estado"><option>Disponible</option><option>Apartado</option><option>Vendido</option><option>En juridico</option></select></div>
+      </div>
+      <div class="row2">
+        <div><label for="valor">Valor ($)</label><input type="number" id="valor" placeholder="450000"></div>
+        <div><label for="metros">m²</label><input type="number" id="metros" placeholder="120"></div>
+      </div>
+      <label for="medida">Medida</label><input type="text" id="medida" placeholder="8m x 15m">
+      <label for="fotolote">Foto del lote</label><input type="file" id="fotolote" accept="image/*" capture="environment" style="padding:8px;">
+      <img id="preview-lote" class="foto-preview">
+      <button id="btn-guardar">💾 Guardar lote</button>
+      <div id="status-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+  // ═══════════════════════════════════════
+  // BACKEND API - Usar fetch en vez de google.script.run
+  // ═══════════════════════════════════════
+  var API_URL = 'https://script.google.com/macros/s/AKfycbyEsQ878-r8KeLeZ4dOvHPN0bCohS23G-KM2ckDy-MjWLsyr8tvN2jPNiaTQycG3Ws/exec';
+
+  async function callAPI(payload) {
+    var session = SessionManager.get();
+    if (session && session.token) {
+      payload.token = session.token;
+    }
+    var response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    return response.json();
+  }
+
+  // ═══════════════════════════════════════
+  // MAPA
+  // ═══════════════════════════════════════
+  var map = L.map('map', { tap: true }).setView([32.62476, -115.45389], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+  }).addTo(map);
+
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      function(p) { map.setView([p.coords.latitude, p.coords.longitude], 12); },
+      function() {},
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  }
+
+  var marker = null, pendingLatLng = null;
+  var latInput = document.getElementById('lat-input');
+  var lngInput = document.getElementById('lng-input');
+  var latDisplay = document.getElementById('lat-display');
+  var lngDisplay = document.getElementById('lng-display');
+
+  function setMarker(lat, lng, panTo) {
+    lat = parseFloat(lat); lng = parseFloat(lng);
+    if(isNaN(lat) || isNaN(lng)) return;
+    if(marker) { marker.setLatLng([lat, lng]); }
+    else {
+      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      marker.on('drag', function(e) {
+        latDisplay.textContent = e.target.getLatLng().lat.toFixed(6);
+        lngDisplay.textContent = e.target.getLatLng().lng.toFixed(6);
+        latInput.value = e.target.getLatLng().lat.toFixed(6);
+        lngInput.value = e.target.getLatLng().lng.toFixed(6);
+      });
+    }
+    if(panTo) map.setView([lat, lng], Math.max(map.getZoom(), 15));
+    latDisplay.textContent = lat.toFixed(6);
+    lngDisplay.textContent = lng.toFixed(6);
+    latInput.value = lat.toFixed(6);
+    lngInput.value = lng.toFixed(6);
+  }
+
+  map.on('click', function(e) {
+    pendingLatLng = e.latlng;
+    L.popup({ closeButton: false, autoClose: true, closeOnClick: false })
+      .setLatLng(e.latlng)
+      .setContent('<div style="text-align:center;padding:4px;"><p style="margin:0 0 8px;font-weight:600;">¿Colocar lote aquí?</p><button onclick="window.__ok()" style="padding:6px 12px;margin-right:4px;background:#1B2A4A;color:#fff;border:none;border-radius:3px;cursor:pointer;">✅ Sí</button><button onclick="window.__no()" style="padding:6px 12px;background:#fff;border:1px solid #1B2A4A;border-radius:3px;cursor:pointer;">❌ No</button></div>')
+      .openOn(map);
+  });
+  window.__ok = function() { if(pendingLatLng) setMarker(pendingLatLng.lat, pendingLatLng.lng, false); map.closePopup(); };
+  window.__no = function() { map.closePopup(); };
+
+  [latInput, lngInput].forEach(function(el) {
+    el.addEventListener('change', function() {
+      if(latInput.value && lngInput.value) setMarker(latInput.value, lngInput.value, true);
+    });
+  });
+
+  function colorEstado(e) {
+    switch((e||'').toLowerCase()) {
+      case 'disponible': return '#3E7A4C';
+      case 'vendido': return '#8A2B2B';
+      case 'apartado': return '#B8842B';
+      case 'en juridico': return '#5B4B8A';
+      default: return '#334268';
+    }
+  }
+
+  // ═══════════════════════════════════════
+  // CARGAR LOTES - Usando fetch
+  // ═══════════════════════════════════════
+  var lotesLayer = L.layerGroup().addTo(map);
+
+  async function cargarLotes() {
+    try {
+      var data = await callAPI({ action: 'obtenerLotes' });
+      if (data.ok && data.lotes) {
+        pintarLotes(data.lotes);
+      } else {
+        pintarLotes(data || []);
+      }
+    } catch (err) {
+      console.error('Error cargando lotes:', err);
+    }
+  }
+
+  function pintarLotes(lotes) {
+    lotesLayer.clearLayers();
+    if (!lotes || !lotes.length) return;
+    lotes.forEach(function(l) {
+      var lat = parseFloat(l.lat), lng = parseFloat(l.lng);
+      if(isNaN(lat) || isNaN(lng)) return;
+      var pop = '<span style="font-family:JetBrains Mono;font-size:.65rem;color:#C89B3C;font-weight:700;">#'+(l.idHoja1||'')+'</span><br><b>'+(l.codigolote||'Sin nombre')+'</b><br>Estado: '+(l.estado||'-')+'<br>Pago: '+(l.tipopago||'-')+'<br>Valor: $'+(l.valor||'-')+'<br>'+(l.metros||'-')+' m² · '+(l.medida||'-');
+      if(l.fotolote) pop += '<br><img src="https://drive.google.com/thumbnail?id='+l.fotolote+'" style="width:100%;max-width:200px;border-radius:4px;margin-top:6px;">';
+      L.circleMarker([lat,lng], { radius:8, color:'#1B2A4A', weight:1.5, fillColor:colorEstado(l.estado), fillOpacity:.9 }).addTo(lotesLayer).bindPopup(pop);
+    });
+  }
+
+  cargarLotes();
+
+  // ═══════════════════════════════════════
+  // FOTO
+  // ═══════════════════════════════════════
+  var fotoLoteBase64 = '';
+  document.getElementById('fotolote').addEventListener('change', function() {
+    var file = this.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      fotoLoteBase64 = e.target.result.split(',')[1];
+      document.getElementById('preview-lote').src = e.target.result;
+      document.getElementById('preview-lote').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ═══════════════════════════════════════
+  // GUARDAR LOTE - Usando fetch
+  // ═══════════════════════════════════════
+  document.getElementById('btn-guardar').addEventListener('click', async function() {
+    var s = document.getElementById('status-msg');
+    if(!latInput.value || !lngInput.value) { s.textContent='⚠️ Falta ubicación.'; s.style.color='#8A2B2B'; return; }
+    this.disabled = true;
+    s.style.color='#334268'; s.textContent='⏳ Guardando...';
+
+    var datosLote = {
+      codigolote: document.getElementById('codigolote').value.trim(),
+      tipopago: document.getElementById('tipopago').value,
+      estado: document.getElementById('estado').value,
+      valor: document.getElementById('valor').value,
+      metros: document.getElementById('metros').value,
+      medida: document.getElementById('medida').value.trim(),
+      lat: latInput.value,
+      lng: lngInput.value,
+      fotolote: ''
+    };
+
+    try {
+      // Subir foto si hay
+      if (fotoLoteBase64) {
+        var fotoRes = await callAPI({
+          action: 'foto.subir',
+          base64: fotoLoteBase64,
+          nombre: 'lote_' + Date.now()
+        });
+        if (fotoRes.ok) datosLote.fotolote = fotoRes.fotoId;
+      }
+
+      // Guardar lote
+      var res = await callAPI({ action: 'lotes.guardar', datos: datosLote });
+
+      if (res.ok) {
+        s.style.color='#3E7A4C'; s.textContent='✅ Lote guardado.';
+        document.getElementById('btn-guardar').disabled = false;
+        document.getElementById('codigolote').value = '';
+        document.getElementById('preview-lote').style.display = 'none';
+        document.getElementById('fotolote').value = '';
+        fotoLoteBase64 = '';
+        cargarLotes();
+      } else {
+        throw new Error(res.error || 'Error al guardar');
+      }
+    } catch (err) {
+      s.style.color='#8A2B2B'; s.textContent='❌ ' + err.message;
+      document.getElementById('btn-guardar').disabled = false;
+    }
+  });
+
+  // ═══════════════════════════════════════
+  // STAMP - Nombre usuario y logout
+  // ═══════════════════════════════════════
+  (function() {
+      var session = SessionManager.get();
+      var stampEl = document.getElementById('sessionStamp');
+      if (session && stampEl) {
+          stampEl.textContent = session.name || 'Admin';
+          stampEl.addEventListener('click', function() {
+              if (confirm('¿Cerrar sesión?')) {
+                  AuthService.logout();
+              }
+          });
+      }
+  })();
+</script>
+
+</body>
+</html>
