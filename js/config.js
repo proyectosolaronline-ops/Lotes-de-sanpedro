@@ -6,7 +6,7 @@ const CONFIG = {
     APP_NAME: 'Fraccionamiento San Pedro',
     APP_PREFIX: 'lotes',
 
-    // ⚠️ CAMBIAR: Pon la URL real de tu Google Apps Script
+    // ✅ URL REAL del Google Apps Script
     BACKEND_URL: (() => {
         const params = new URLSearchParams(location.search);
         return params.get('backend')
