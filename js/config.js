@@ -11,7 +11,7 @@ const CONFIG = {
         const params = new URLSearchParams(location.search);
         return params.get('backend')
             || localStorage.getItem('lotes_backend')
-            || 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
+            || 'https://script.google.com/macros/s/AKfycbyEsQ878-r8KeLeZ4dOvHPN0bCohS23G-KM2ckDy-MjWLsyr8tvN2jPNiaTQycG3Ws/exec';
     })(),
 
     // Tiempos de sesión
