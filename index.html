@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Acceso · Fraccionamiento San Pedro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #1B2A4A;
+            --ink-soft: #334268;
+            --paper: #F5F3EE;
+            --paper-line: #E4E0D6;
+            --ochre: #C89B3C;
+            --error: #8A2B2B;
+            --error-bg: #FEF0F0;
+            --success: #3E7A4C;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .login-screen {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .brand-icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+        }
+
+        .brand-name {
+            font-family: 'Fraunces', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .brand-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+
+        .role-tabs {
+            display: flex;
+            background: #fff;
+            border: 1px solid var(--paper-line);
+            border-radius: 4px;
+            padding: 3px;
+            margin-bottom: 20px;
+        }
+
+        .role-tab {
+            flex: 1;
+            padding: 11px;
+            text-align: center;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            background: transparent;
+            transition: all 0.15s;
+        }
+
+        .role-tab.active {
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        .login-card {
+            background: #fff;
+            border: 1px solid var(--paper-line);
+            border-radius: 4px;
+            padding: 28px 24px;
+        }
+
+        .login-title {
+            font-family: 'Fraunces', serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .login-sub {
+            font-size: 13px;
+            color: var(--ink-soft);
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--paper-line);
+            border-radius: 3px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+        }
+
+        .field input:focus {
+            outline: 2px solid var(--ochre);
+            outline-offset: 1px;
+            background: #fff;
+        }
+
+        .code-input {
+            font-size: 22px !important;
+            font-weight: 700 !important;
+            letter-spacing: 8px !important;
+            text-align: center !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            text-transform: uppercase;
+        }
+
+        .error-msg {
+            display: none;
+            background: var(--error-bg);
+            color: var(--error);
+            padding: 10px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-bottom: 14px;
+            border: 1px solid #F5C6C6;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-primary {
+            background: var(--ink);
+            color: var(--paper);
+        }
+
+        .btn-primary:hover {
+            background: var(--ochre);
+            color: var(--ink);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+        .btn-link {
+            background: transparent;
+            color: var(--ink-soft);
+            text-decoration: underline;
+            font-size: 11px;
+            padding: 8px;
+            width: auto;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .btn-back {
+            background: transparent;
+            color: var(--ink-soft);
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0;
+            margin-bottom: 16px;
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 9999;
+            display: none;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        #toast.success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        #toast.error {
+            background: var(--error);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-screen" id="loginScreen">
+        <!-- Marca -->
+        <div class="brand">
+            <div class="brand-icon">🏗️</div>
+            <div class="brand-name">Fraccionamiento San Pedro</div>
+            <div class="brand-sub">Panel de Administración</div>
+        </div>
+
+        <!-- Selector de rol -->
+        <div class="role-tabs">
+            <button class="role-tab active" id="tabOwner" onclick="switchRole('owner')">
+                🏠 Dueño
+            </button>
+            <button class="role-tab" id="tabVendedor" onclick="switchRole('vendedor')">
+                🏷️ Vendedor
+            </button>
+        </div>
+
+        <!-- Tarjeta de login -->
+        <div class="login-card">
+            <!-- VISTA DUEÑO: Paso 1 -->
+            <div id="ownerStep1">
+                <div class="login-title">Acceso Dueño</div>
+                <div class="login-sub">Ingresa tu email para recibir un código de acceso seguro.</div>
+                <div class="field">
+                    <label>📧 Email</label>
+                    <input type="email" id="ownerEmail" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')requestOwnerCode()" />
+                </div>
+                <div class="error-msg" id="ownerError1"></div>
+                <button class="btn btn-primary" id="ownerBtn1" onclick="requestOwnerCode()">
+                    Enviar código
+                </button>
+            </div>
+
+            <!-- VISTA DUEÑO: Paso 2 -->
+            <div id="ownerStep2" class="hidden">
+                <button class="btn-back" onclick="backToStep1()">← Volver</button>
+                <div class="login-title">Verificar código</div>
+                <div class="login-sub" id="codeSentMsg">Revisa tu email. Código válido por 15 minutos.</div>
+                <div class="field">
+                    <label>🔐 Código de 8 dígitos</label>
+                    <input type="text" id="ownerCode" class="code-input" placeholder="________" maxlength="8" onkeydown="if(event.key==='Enter')verifyOwnerCode()" />
+                </div>
+                <div class="error-msg" id="ownerError2"></div>
+                <button class="btn btn-primary" id="ownerBtn2" onclick="verifyOwnerCode()">
+                    Ingresar
+                </button>
+                <button class="btn-link" onclick="requestOwnerCode()">
+                    Reenviar código
+                </button>
+            </div>
+
+            <!-- VISTA VENDEDOR -->
+            <div id="vendedorView" class="hidden">
+                <div class="login-title">Acceso Vendedor</div>
+                <div class="login-sub">Usa las credenciales proporcionadas por el dueño.</div>
+                <div class="field">
+                    <label>🏗️ ID del Fraccionamiento</label>
+                    <input type="text" id="vendedorUserId" placeholder="Ej: 1" />
+                </div>
+                <div class="field">
+                    <label>📧 Email</label>
+                    <input type="email" id="vendedorEmail" placeholder="vendedor@email.com" />
+                </div>
+                <div class="field">
+                    <label>🔒 Contraseña</label>
+                    <input type="password" id="vendedorPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doVendedorLogin()" />
+                </div>
+                <div class="error-msg" id="vendedorError"></div>
+                <button class="btn btn-primary" id="vendedorBtn" onclick="doVendedorLogin()">
+                    Ingresar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <!-- SCRIPTS -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/inactivity.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // ═══════════════════════════════
+        // LÓGICA DE UI DEL LOGIN
+        // ═══════════════════════════════
+
+        let currentRole = 'owner';
+        let ownerEmailTemp = '';
+        let ownerUserIdTemp = '';
+
+        function switchRole(role) {
+            currentRole = role;
+            document.getElementById('tabOwner').classList.toggle('active', role === 'owner');
+            document.getElementById('tabVendedor').classList.toggle('active', role === 'vendedor');
+            document.getElementById('ownerStep1').classList.toggle('hidden', role !== 'owner');
+            document.getElementById('ownerStep2').classList.add('hidden');
+            document.getElementById('vendedorView').classList.toggle('hidden', role !== 'vendedor');
+            hideAllErrors();
+        }
+
+        async function requestOwnerCode() {
+            const email = document.getElementById('ownerEmail').value.trim();
+            const btn = document.getElementById('ownerBtn1');
+            const errorEl = document.getElementById('ownerError1');
+            hideError(errorEl);
+
+            if (!email) { showError(errorEl, 'Ingresa tu email'); return; }
+
+            setBtnLoading(btn, true, 'Enviando...');
+            const result = await AuthService.requestOwnerCode(email);
+            setBtnLoading(btn, false, 'Enviar código');
+
+            if (!result.success) { showError(errorEl, result.error); return; }
+
+            ownerEmailTemp = email;
+            ownerUserIdTemp = result.data.userId;
+
+            document.getElementById('codeSentMsg').textContent =
+                'Enviamos un código de 8 dígitos a ' + email + '. Válido por 15 minutos.';
+            document.getElementById('ownerStep1').classList.add('hidden');
+            document.getElementById('ownerStep2').classList.remove('hidden');
+            document.getElementById('ownerCode').value = '';
+            document.getElementById('ownerCode').focus();
+            toast('✅ Código enviado', 'success');
+        }
+
+        function backToStep1() {
+            document.getElementById('ownerStep2').classList.add('hidden');
+            document.getElementById('ownerStep1').classList.remove('hidden');
+            hideError(document.getElementById('ownerError2'));
+        }
+
+        async function verifyOwnerCode() {
+            const code = document.getElementById('ownerCode').value.trim();
+            const btn = document.getElementById('ownerBtn2');
+            const errorEl = document.getElementById('ownerError2');
+            hideError(errorEl);
+
+            if (code.length < 8) { showError(errorEl, 'Ingresa el código completo de 8 dígitos'); return; }
+
+            setBtnLoading(btn, true, 'Verificando...');
+            const result = await AuthService.verifyOwnerCode(ownerEmailTemp, code, ownerUserIdTemp);
+            setBtnLoading(btn, false, 'Ingresar');
+
+            if (!result.success) { showError(errorEl, result.error); return; }
+
+            toast('✅ Acceso concedido', 'success');
+            App.handleLoginSuccess(result.data);
+        }
+
+        async function doVendedorLogin() {
+            const userId = document.getElementById('vendedorUserId').value.trim();
+            const email = document.getElementById('vendedorEmail').value.trim();
+            const password = document.getElementById('vendedorPassword').value;
+            const btn = document.getElementById('vendedorBtn');
+            const errorEl = document.getElementById('vendedorError');
+            hideError(errorEl);
+
+            if (!userId || !email || !password) { showError(errorEl, 'Todos los campos son obligatorios'); return; }
+
+            setBtnLoading(btn, true, 'Ingresando...');
+            const result = await AuthService.vendedorLogin(userId, email, password);
+            setBtnLoading(btn, false, 'Ingresar');
+
+            if (!result.success) { showError(errorEl, result.error); return; }
+
+            toast('✅ Acceso concedido', 'success');
+            App.handleLoginSuccess(result.data);
+        }
+
+        // ─── Utilidades ───
+        function showError(el, msg) { el.textContent = msg; el.classList.add('show'); }
+        function hideError(el) { el.classList.remove('show'); }
+        function hideAllErrors() {
+            document.querySelectorAll('.error-msg').forEach(el => el.classList.remove('show'));
+        }
+
+        function setBtnLoading(btn, loading, text) {
+            btn.disabled = loading;
+            if (loading) {
+                btn.dataset.original = btn.textContent;
+                btn.innerHTML = '<span class="spinner"></span> ' + text;
+            } else {
+                btn.textContent = text;
+            }
+        }
+
+        function toast(msg, type) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.className = type || 'success';
+            el.style.display = 'block';
+            clearTimeout(el._t);
+            el._t = setTimeout(() => { el.style.display = 'none'; }, 3000);
+        }
+    </script>
+</body>
+</html>
